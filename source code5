@@ -1,0 +1,127 @@
+//This program reads a Tiff and equalized it with a histogeram
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
+
+int main()
+{
+	char TIFFfilename[50];
+	char EqualizedFileName[50];
+	long int NoOfPixle[256];
+	long int RunSum[256];
+	int MultipliedNormalized[256];
+	cout<<"Enter The file name : ";
+	cin>>TIFFfilename;
+
+	ifstream input;
+	ofstream output;
+	strcpy(EqualizedFileName,TIFFfilename);
+	strcat(TIFFfilename,".tif");
+	input.open(TIFFfilename, ios::in | ios::binary);
+	//read header
+	short int byteOrder;
+	short int version;
+	long int offset;
+	short int numberOfTags;
+	input.read((char*)&byteOrder, 2);
+	input.read((char*)&version, 2);
+	input.read((char*)&offset, 4);
+	input.read((char*)&numberOfTags, 2);
+	//read tiff file tags
+	long int width=0;
+	long int length=0;
+	long int dataBegin=0;
+	for (int i=0;i<numberOfTags;i++)
+	{
+		short int tag;
+		input.read((char*)&tag,2);
+		short int tagtype;
+		input.read((char*)&tagtype, 2);
+		long int taglength;
+		input.read((char*)&taglength, 4);
+		long int tagvalue;
+		input.read((char*)&tagvalue, 4);
+		switch(tag)
+		{
+			case 256: 	 width =tagvalue; 			break;
+			case 257: 	 length =tagvalue;			break;
+			case 273:    dataBegin =tagvalue;		break;
+			default: break;
+		}
+	}
+	//read tiff file pixle grayscale level
+		//define a variable size array to store data
+    char **pixle = new char*[length];
+        for(int i = 0; i< length; ++i)
+        {
+            pixle[i] = new char[width];
+        }
+		//fill the array elements
+	input.seekg(dataBegin, ios::beg);
+	for (int i=0;i<length;i++)
+		for (int j=0;j<width;j++)
+			input.read((char*)&pixle[i][j], 1);
+	input.close();
+
+//***** Histogram Equalization *****//
+
+//define the resulted matrix
+    char **Result = new char*[length];
+        for(int i = 0; i< length; ++i)
+        {
+			Result[i] = new char[width];
+        }
+           int max = pixle[0][0];
+        for (int r=0;r<length;r++)
+	   	for (int k=0;k<width;k++)
+                if(max<pixle[r][k])
+                max = pixle[r][k];
+         //       cout<<endl<<max;
+
+
+	//Calculate No of Pixle in each gray scale level
+		for (int i=0;i<256;i++)
+			NoOfPixle[i]=0;
+
+		int c;
+         for(int r=0;r<256;r++)
+         {  c=0;
+		      for (int i=0;i<length;i++)
+			     for (int j=0;j<width;j++)
+				    if (r==pixle[i][j])
+                   c++;
+            NoOfPixle[r]=c;
+         }
+
+//Calculate Run Sum in each gray scale level
+		RunSum[0]=NoOfPixle[0];
+		for (int i=1;i<256;i++)
+			RunSum[i]=RunSum[i-1]+NoOfPixle[i];
+
+//Calculate Normalized Run Sum in each gray scale level
+		for (int i=0;i<256;i++)
+			MultipliedNormalized[i]=(int) (max*RunSum[i]/RunSum[255]);
+
+//Calculate Result image
+		for (int i=0;i<length;i++)
+			for (int j=0;j<width;j++)
+				if (pixle[i][j]>=0)
+					Result[i][j]=(char) MultipliedNormalized[pixle[i][j]];
+			  	else
+					Result[i][j]=(char) MultipliedNormalized[pixle[i][j]+256];
+//write Resulted image matrix in file
+		strcat(EqualizedFileName,"_HisEqualized.raw");
+		output.open(EqualizedFileName, ios::out | ios::binary);
+		for (int i=0;i<length;i++)
+			for (int j=0;j<width;j++)
+				output.write((char*) &Result[i][j], 1);
+		output.close();
+	delete(Result);
+	delete(pixle);
+//	delete(NoOfPixle);
+//	delete(RunSum);
+//	delete(MultipliedNormalized);
+}
+
+
