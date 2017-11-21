@@ -1,0 +1,169 @@
+// a.cpp : Defines the entry point for the console application.
+
+#include<iostream>
+#include<stdio.h>
+#include<math.h>
+#include<conio.h>
+using namespace std;
+
+
+const int row=256;
+const int col=256;
+
+//using namespace std;
+
+
+
+struct info
+{
+/// header
+int  tag;
+int type;
+int length;
+int offset;
+}st[800];
+
+struct header
+{
+int  order;
+int  ver;
+int  length;
+int  value;
+}h;
+
+
+ unsigned int in[row][col];
+ unsigned int out[512][512];
+
+
+void main()
+{
+
+int len,wid,start,i,j;
+
+
+
+  unsigned char b[row][col];
+
+
+ // unsigned long int rawData[ROW][COLUMN];
+
+
+cout<<"Please Enter File Name (Filename.tif)"<<"\n";
+char filename[20];
+cin>>filename;
+FILE *p=fopen(filename,"rb");
+
+if(p==NULL)
+{
+cout<<"unable to open file";
+int end;
+cin>>end;
+return;
+}
+
+int   a;
+fread(&a,2,1,p);           ///read p and save it in a  two byte and read it one time
+h.order=a;
+fread(&a,2,1,p);
+h.ver=a;
+fread(&h.length,4,1,p);
+
+fseek(p,h.length,0); //to stop for the add. of the ED      seeking on number of de if it is not in the first line
+fread(&h.value,2,1,p);    //no of DE
+
+//printf("%x  %x  %x  %x",h.order,h.ver,h.length,h.value);    // in hexa
+int x=h.value;
+for(int i=0;i<x;i++)
+{
+fread(&st[i].tag,2,1,p);           // tag   //read and put it in structure st
+fread(&st[i].type,2,1,p);          // type        ==
+fread(&st[i].length,4,1,p);        // length       ==
+fread(&st[i].offset,4,1,p);        // value          ==
+}
+
+ //cout<<" "<<tagname<<"             "<<st[i].tag<<" \t "<<st[i].type<<" \t " <<st[i].length<<" \t " <<st[i].offset;
+ //cout<<endl<<"............................................. \n\n";
+
+
+for(int i=1;i<x;i++)
+{
+	if(st[i].tag==256)
+	len=st[i].offset;
+	if(st[i].tag==257)
+	wid=st[i].offset;
+	if(st[i].tag==273)
+	start=st[i].offset;
+}
+
+FILE *p11=fopen("Output.raw","wb");
+cout<<"Raw File Created\n";
+cout<<"------------------------\n";
+
+
+
+fseek(p,start,0);
+char xx;
+/*char pic[256][256];
+char hpic[256][256];
+char bpic[256][256];
+char mpic[256][256];*/
+
+for(int i=0;i<len;i++)
+for(int j=0;j<wid;j++)
+{
+fread(&xx,1,1,p);
+/*rawData[i][j]=xx;
+pic[i][j]=xx;
+hpic[i][j]=xx;
+bpic[i][j]=xx;
+mpic[i][j]=xx;*/
+fwrite(&xx,1,1,p11);
+}
+
+fclose(p);
+fclose(p11);
+
+cout<<"\n";
+//enlarge
+FILE *n1 = fopen("Output.raw","rb");
+FILE *enlarge = fopen("enlarge.raw","wb");
+
+//read data
+for(int i=0; i<len; i++)
+	for(int j=0; j<wid; j++){
+		fread(&in[i][j],1,1,n1);
+	}
+
+// calculate
+
+for(int i=0; i<len; i++)
+for(int j=0; j<wid; j++){
+	int t=2*i;
+	int k=2*j;
+
+	out[t][k] = in[i][j];
+	out[t][k+1] = in[i][j];
+	out[t+1][k] = in[i][j];
+	out[t+1][k+1] = in[i][j];
+}
+
+
+//write
+for(int i=0; i<(len*2); i++)
+for(int j=0; j<(wid*2); j++){
+	fwrite(&out[i][j],1,1,enlarge);
+}
+fclose(n1);
+fclose(enlarge);
+cout <<"\n Enlarge File created successfuly";
+
+
+char file[20];
+cin >> file;
+
+
+cout<<"\n";
+
+}
+
