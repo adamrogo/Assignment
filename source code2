@@ -1,0 +1,182 @@
+#include <iostream>
+	#include <fstream>
+	#include <string>
+	#include <math.h> 
+	#include <iomanip>  
+
+	using namespace std;
+
+
+	short unsigned int rawData[1000][1000]; //ROW & COLUMN
+	
+class header
+{
+public:
+	short int byteOrder;
+	short int version;
+	short int offset;
+	short int numberOfDE;
+};
+
+class description
+{
+public:
+	short int tag;
+	short int type;
+	long int length;
+	long int value;
+};
+class I
+{
+public:
+	long int width;
+	long int length;
+	long int dataBegin;
+};
+
+//read a tiff image, extract tag and save imag in .raw file. 
+	int main()
+	{
+	char filename[50], tiffname[50], txtname[50], rawname[50];
+	char addtif[5] = ".tif";
+	char addraw[5] = ".raw";
+	char addtxt[5] = ".txt";
+	ifstream input;
+	ofstream output;
+	ofstream text;
+	cout<<"Please enter tiff image file name : ";
+	cin>>filename;
+	strcpy(tiffname, filename);
+	strcat(tiffname, addtif);
+	input.open(tiffname, ios::in | ios::binary);
+	header head;
+	input.read((char*) &head.byteOrder, 2);
+	input.read((char*) &head.version, 2);
+	input.read((char*) &head.offset, 4);
+	input.read((char*) &head.numberOfDE, 2);
+	description *de;
+	de = new description[100];
+	for(int i=0 ; i<head.numberOfDE ; i++)
+	{
+		input.read((char*) &de[i].tag, 2);
+		input.read((char*) &de[i].type, 2);
+		input.read((char*) &de[i].length, 4);
+		input.read((char*) &de[i].value, 4);
+	}
+	
+	cout<<endl;
+	cout<<"--------------------"<<endl;
+	cout<<"Header File : "<<tiffname<<endl;
+	cout<<"--------------------"<<endl;
+	cout<<hex<<uppercase;
+	cout<<"Byte Order   : "<<head.byteOrder<<endl;
+	cout<<"Version      : "<<head.version<<endl;
+	cout<<"Offset       : "<<head.offset<<endl;
+	cout<<"Number of DE : "<<dec<<head.numberOfDE<<endl;
+	cout<<endl;
+	
+	I img;
+
+	cout<<"--------------------"<<endl;
+	cout<<"Directory Entry (DE)"<<endl;
+	cout<<"--------------------"<<endl;
+	for(int i=0 ; i<head.numberOfDE ; i++)
+	{
+		cout<<"Tag      : "<<de[i].tag<<endl;
+		switch(de[i].tag)
+		{
+		case 254: cout << "Tag Name : NewSubFileType";				break;
+case 255: cout << "Tag Name : SubFileType";			break;
+		case 256: cout << "Tag Name : ImageWidth";
+ 		img.width = de[i].value;		
+break;  //set image width value
+case 257: cout << "Tag Name : ImageLength"; 
+img.length = de[i].value;		
+break;	//set image length value
+		case 258: cout << "Tag Name : BitsPerSample";				break;
+		case 259: cout << "Tag Name : Compression";				break;
+		case 262: cout << "Tag Name : PhotometricInterpretation";		break;		
+		case 273: cout << "Tag Name : StripOffsets"; 
+img.dataBegin = de[i].value;
+break;	//set image begin value	
+		case 277: cout << "Tag Name : SamplePerPixel";				break;		
+		case 278: cout << "Tag Name : RowPerStrip";				break;		
+		case 279: cout << "Tag Name : StripByteCounts";				break;		
+		case 282: cout << "Tag Name : XResolution";				break;		
+		case 283: cout << "Tag Name : YResolution";				break;		
+		default : cout << "Tag Name : Other Tag";					break;
+		}
+		//cout<< hex << uppercase;
+		cout<<endl;
+		cout<<"Type     : "<<de[i].type<<endl;
+		cout<<"Length   : "<<de[i].length<<endl;
+		cout<<"Value    : "<<de[i].value<<endl;
+		cout<<endl<<endl;
+	}
+
+	//open txt file, and save directory entries into it
+	strcpy(txtname, filename);
+	strcat(txtname, addtxt);
+	text.open(txtname, ios::out);
+	text<<"--------------------"<<endl;
+	text<<"Header File : "<<tiffname<<endl;
+	text<<"--------------------"<<endl;
+	text<<hex<<uppercase;
+	text<<"Byte Order   : "<<head.byteOrder<<endl;
+	text<<"Version      : "<<head.version<<endl;
+	text<<"Offset       : "<<head.offset<<endl;
+	text<<"Number of DE : "<<dec<<head.numberOfDE<<endl;
+	text<<endl;
+	text<<"--------------------"<<endl;
+	text<<"Directory Entry (DE)"<<endl;
+	text<<"--------------------"<<endl;
+	for(int i=0 ; i<head.numberOfDE ; i++)
+	{
+		text<<"Tag      : "<<de[i].tag<<endl;
+		switch(de[i].tag)
+		{
+		case 254: text << "Tag Name : NewSubFileType";				break;
+		case 255: text << "Tag Name : SubFileType"	;				break;
+		case 256: text << "Tag Name : ImageWidth"	;				break;
+		case 257: text << "Tag Name : ImageLength"; 				break;
+		case 258: text << "Tag Name : BitsPerSample";				break;
+		case 259: text << "Tag Name : Compression";				break;
+		case 262: text << "Tag Name : PhotometricInterpretation";		break;		
+		case 273: text << "Tag Name : StripOffsets";				break;	
+		case 277: text << "Tag Name : SamplePerPixel";				break;		
+		case 278: text << "Tag Name : RowPerStrip";				break;		
+		case 279: text << "Tag Name : StripByteCounts";				break;		
+		case 282: text << "Tag Name : XResolution";				break;		
+		case 283: text << "Tag Name : YResolution";				break;		
+		default : text << "Tag Name : Other Tag"	;				break;
+		}
+
+		//text<< hex << uppercase<<endl;
+
+		text<<endl<<"Type     : "<<de[i].type<<endl;
+		text<<"Length   : "<<de[i].length<<endl;
+		text<<"Value    : "<<de[i].value<<endl;
+		text<<endl<<endl;
+	}
+
+	
+text.close();
+
+	//open raw file, and save raw data into the file
+	strcpy(rawname, filename);
+	strcat(rawname, addraw);
+	output.open(rawname, ios::out | ios::binary);
+	input.seekg(img.dataBegin, ios::beg);
+
+	for(int i=0 ; i<img.length ; i++)
+	{
+		for(int j=0 ; j<img.width ; j++)
+		{
+			input.read((char*) &rawData[i][j], 1);
+			output.write((char*) &rawData[i][j], 1);
+		}
+	}
+	output.close();
+	input.close();
+	system("pause");
+	}
