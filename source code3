@@ -1,0 +1,150 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <math.h> 
+#include <iomanip>  
+
+using namespace std;
+
+
+short unsigned int rawData[1000][1000]; //ROW & COLUMN
+
+	
+class header
+{
+public:
+	short int byteOrder;
+	short int version;
+	short int offset;
+	short int numberOfDE;
+};
+
+class description
+{
+public:
+	short int tag;
+	short int type;
+	long int length;
+	long int value;
+};
+class I
+{
+public:
+	long int width;
+	long int length;
+	long int dataBegin;
+};
+
+struct i_info
+	{
+		int  i_tag;
+		int i_type;
+		int i_length;
+		int i_offset;
+	}st[800];
+
+	struct i_header
+	{
+		char  i_order;
+		char  i_ver;
+		char  i_length;
+		char  i_value;
+	}h;
+
+
+//slicel the image.
+	void main()
+	{
+		char name[20],name1[20];
+cout<<"enter the name of file"<<endl;
+cin>>name;
+strcpy(name1,name);
+strcat(name,".tif");
+FILE *p=fopen(name,"rb");
+int   a;
+fread(&a,2,1,p);
+h.i_order=a;
+fread(&a,2,1,p);
+h.i_ver=a;
+fread(&h.i_length,4,1,p);
+
+fseek(p,h.i_length,0); //to go for the add. of the ED
+fread(&h.i_value,2,1,p);
+
+
+for(int i=0;i<h.i_value;i++)
+{
+fread(&st[i].i_tag,2,1,p);
+fread(&st[i].i_type,2,1,p);
+fread(&st[i].i_length,4,1,p);
+fread(&st[i].i_offset,4,1,p);
+}
+int len,wid,start;
+for(int i=1;i<h.i_value;i++)
+{
+if(st[i].i_tag==256)
+len=st[i].i_offset;
+if(st[i].i_tag==257)
+wid=st[i].i_offset;
+if(st[i].i_tag==273)
+start=st[i].i_offset;
+}
+strcat(name1,".raw");
+FILE *p1=fopen(name1,"rb");
+
+FILE *p2=fopen("layer1.raw","wb");
+FILE *p3=fopen("layer2.raw","wb");
+FILE *p4=fopen("layer3.raw","wb");
+FILE *p5=fopen("layer4.raw","wb");
+FILE *p6=fopen("layer5.raw","wb");
+FILE *p7=fopen("layer6.raw","wb");
+FILE *p8=fopen("layer7.raw","wb");
+FILE *p9=fopen("layer8.raw","wb");
+if(p1==NULL)
+{
+cout<<"unable to open file";
+return;
+}
+ int select,i,j,light,dark;
+unsigned char x;
+       for(i=0;i<len;i++)
+       for(j=0;j<wid;j++)
+       {
+           fread(&x,1,1,p1);
+           int s=0,t;
+           for(int k=0;k<8;k++)
+           {
+           t=x%2;
+           s=s+pow(2.0,k)*t;
+           x=x/2;
+           }
+          int s2=s*0x80;
+              fwrite(&s2,1,1,p2);
+          int s3=s*0x40;
+              fwrite(&s3,1,1,p3);
+          int s4=s*0x20;
+              fwrite(&s4,1,1,p4);
+          int s5=s*0x10;
+              fwrite(&s5,1,1,p5);
+          int s6=s*0x08;
+              fwrite(&s6,1,1,p6);
+          int s7=s*0x04;
+              fwrite(&s7,1,1,p7);
+          int s8=s*0x02;
+              fwrite(&s8,1,1,p8);
+          int s9=s*0x01;
+              fwrite(&s9,1,1,p9);
+       }
+        fclose(p1);
+        fclose(p2);
+        fclose(p3);
+        fclose(p4);
+        fclose(p5);
+        fclose(p6);
+        fclose(p7);
+        fclose(p8);
+        fclose(p9);
+      getchar();
+	  system("pasue");
+	}
+
