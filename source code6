@@ -1,0 +1,358 @@
+// ass.cpp : Defines the entry point for the console application.
+//
+#include <cstdlib>
+#include <iostream>
+#include<stdio.h>
+#include<math.h>
+#include<conio.h>
+#include<stdio.h>
+
+using namespace std;  
+const int row=750;
+const int col=610;
+
+
+struct info
+{
+/// header
+int  tag;
+int type;
+int length;
+int offset;
+}st[800];
+
+struct header
+{
+int  order;
+int  ver;
+int  length;
+int  value;
+}h;
+
+void main()
+{
+//clrscr();
+// open function and rb = read binary
+ 
+int len,wid,start;
+while(true)
+{
+cout<<"Enter 1 for read TIF file \n";
+cout<<"Enter 2 for Create Layers \n";
+cout<<"Enter 3 for Patern \n";
+cout<<"Enter 4 for Halftoning \n";
+cout<<"Enter 5 for Filtering (Low Pass, Hight Pass, High-boost, Median)\n";
+
+int ch;
+cin>>ch;
+switch(ch)
+{
+
+case 1:                  //option
+	goto a;
+	break;
+case 2:
+	goto b;
+	break;
+case 4:
+	goto d;
+	break;
+case 5:
+	goto c;
+	break;
+
+a:
+cout<<"Please Enter File Name (Filename.tif)"<<"\n"; // option 1 
+char filename[20];
+cin>>filename;
+FILE *p=fopen(filename,"rb");
+
+if(p==NULL)
+{
+cout<<"unable to open file";
+int end;
+cin>>end;
+return;
+}
+//.........................read file......................................
+
+int   a;
+fread(&a,2,1,p);           ///read p and save it in a  two byte and read it one time
+h.order=a;
+fread(&a,2,1,p);
+h.ver=a;
+fread(&h.length,4,1,p);
+
+fseek(p,h.length,0); //to stop for the add. of the ED      seeking on number of de if it is not in the first line
+fread(&h.value,2,1,p);    //no of DE
+
+printf("%x  %x  %x  %x",h.order,h.ver,h.length,h.value);    // in hexa
+int x=h.value;
+for(int i=0;i<x;i++)
+{
+fread(&st[i].tag,2,1,p);           // tag   //read and put it in structure st
+fread(&st[i].type,2,1,p);          // type        ==
+fread(&st[i].length,4,1,p);        // length       ==
+fread(&st[i].offset,4,1,p);        // value          ==
+}
+
+cout<<endl<<endl;
+
+for(int i=0;i<x;i++)
+{
+   if(st[i].tag==254)
+		printf("\n tag name: newsubfiletype");
+   else if(st[i].tag==256)
+		printf("\n tag name: image width");
+   else if(st[i].tag==257)
+		printf("\n tag name: image length");
+   else if(st[i].tag==258)
+		printf("\n tag name: bitper sample");
+   else if(st[i].tag==259)
+		printf("\n tag name: compression");
+   else if(st[i].tag==262)
+		printf("\n tag name: photo metrice");
+   else if(st[i].tag==263)
+		printf("\n tag name: tresh holding");
+   else if(st[i].tag==264)
+		printf("\n tag name: cell width");
+   else if(st[i].tag==265)
+		printf("\n tag name: cell length");
+   else if(st[i].tag==266)
+		printf("\n tag name: fill order");
+   else if(st[i].tag==269)
+		printf("\n tag name: document name");
+   else if(st[i].tag==270)
+		printf("\n tag name: image descripsion");
+   else if(st[i].tag==273)
+		printf("\n tag name: strip offset");
+   else if(st[i].tag==274)
+		printf("\n tag name: orientation");
+   else if(st[i].tag==277)
+		printf("\n tag name: samples per pixel");
+   else if(st[i].tag==278)
+		printf("\n tag name: row perstrip");
+   else if(st[i].tag==279)
+		printf("\n tag name: strip byte counts");
+   else if(st[i].tag==282)
+		printf("\n tag name: Xresolution");
+   else if(st[i].tag==283)
+		printf("\n tag name: Yresolution");
+
+ printf("\n tag: %x    \n type: %x     \n count: %x      \n offset: %x",st[i].tag,st[i].type,st[i].length,st[i].offset);
+ cout<<endl<<"............................ \n\n";
+ }
+
+for(int i=1;i<x;i++)
+{
+	if(st[i].tag==256)
+	len=st[i].offset;
+	if(st[i].tag==257)
+	wid=st[i].offset;
+	if(st[i].tag==273)
+	start=st[i].offset;
+}
+
+FILE *p11=fopen("Output.raw","wb"); //output .raw created
+cout<<"Raw File Created";
+//goto e;
+
+c:
+fseek(p,start,0);
+char xx;
+char pic[111][111];
+char hpic[111][111];
+char bpic[111][111];
+char mpic[111][111];
+for(int i=0;i<len;i++)
+for(int j=0;j<wid;j++)
+{
+fread(&xx,1,1,p);
+pic[i][j]=xx;
+hpic[i][j]=xx;
+bpic[i][j]=xx;
+mpic[i][j]=xx;
+fwrite(&xx,1,1,p11);
+}
+
+FILE *lpf=fopen("lpf.raw","wb");   //low pass filtering created n open //high frequency
+
+for(int i=1;i<len;i++)
+for(int j=1;j<wid;j++)
+{//mean filter
+pic[i][j]=(pic[i][j]+
+		   pic[i-1][j]+pic[i][j-1]+
+		   pic[i+1][j]+pic[i][j+1]+
+		   pic[i-1][j-1]+pic[i+1][j+1]+
+		   pic[i+1][j-1]+pic[i-1][j+1])/9;
+char xi=pic[i][j];
+fwrite(&xi,1,1,lpf);
+}
+
+FILE *hpf=fopen("hpf.raw","wb"); //high pass filtering created, mixture of +ve n -ve coefficients
+
+for(int i=1;i<len;i++)
+for(int j=1;j<wid;j++)
+{
+hpic[i][j]=((8*hpic[i][j]-
+			hpic[i-1][j]-hpic[i][j-1]-hpic[i+1][j]-
+			hpic[i][j+1]-hpic[i-1][j-1]-hpic[i+1][j+1]-
+			hpic[i+1][j-1]-hpic[i-1][j+1]))/9;
+char xi=hpic[i][j];
+fwrite(&xi,1,1,hpf);
+}
+FILE *bpf=fopen("bpf.raw","wb");  //high boost filtering created
+
+int c;
+cout<<"Enter c for High-boost\n";
+cin>>c;
+for(int i=1;i<len;i++)
+for(int j=1;j<wid;j++)
+{
+bpic[i][j]=(c*bpic[i][j]-bpic[i-1][j]-bpic[i][j-1]-bpic[i+1][j]-bpic[i][j+1]-bpic[i-1][j-1]-bpic[i+1][j+1]-bpic[i+1][j-1]-bpic[i-1][j+1])/9;
+char xi=bpic[i][j];
+fwrite(&xi,1,1,bpf);
+}
+
+
+FILE *mpf=fopen("mpf.raw","wb");  //median pass filtering 
+for(int i=1;i<len;i++)
+{
+for(int j=1;j<wid;j++)
+{
+	char spic[9]={mpic[i][j],mpic[i-1][j],mpic[i][j-1],mpic[i+1][j],mpic[i][j+1],mpic[i-1][j-1],mpic[i+1][j+1],mpic[i+1][j-1],mpic[i-1][j+1]};
+	
+
+
+	
+	for (int ix = 0; ix < 9; ix++)
+	{
+		for (int jx = 0; jx < 9; jx++)
+		{
+				if (spic[ix] < spic[jx])
+				{
+					char temp = spic[ix];
+					spic[ix] = spic[jx];
+					spic[jx] = temp;
+				}
+		}
+	}
+
+
+	mpic[i][j]=spic[4];
+	char xi=mpic[i][j];
+	fwrite(&xi,1,1,mpf);
+}
+}
+
+fclose(lpf);
+fclose(bpf);
+fclose(hpf);
+fclose(mpf);
+fclose(p);
+fclose(p11);
+
+cout<<"Filtering Succesfully Done \n";
+//goto e;
+
+b:  //create layer
+FILE *p2=fopen("Output.raw","rb");
+
+FILE *p10=fopen("layer1.raw","wb");
+FILE *p3=fopen("layer2.raw","wb");
+FILE *p4=fopen("layer3.raw","wb");
+FILE *p5=fopen("layer4.raw","wb");
+FILE *p6=fopen("layer5.raw","wb");
+FILE *p7=fopen("layer6.raw","wb");
+FILE *p8=fopen("layer7.raw","wb");
+FILE *p9=fopen("layer8.raw","wb");
+if(p2==NULL)
+{
+cout<<"unable to open file";
+//continue;
+}
+int select,i,j,light,dark;
+unsigned char x1;
+       for(i=0;i<len;i++)
+       for(j=0;j<wid;j++)
+       {
+           fread(&x1,1,1,p2);
+           int s=0,t;
+           for(int k=0;k<8;k++)
+           {
+           t=x1%2;
+           s=s+pow(k,2.0)*t;
+           x1=x1/2;
+           }
+          int s2=s&0xfe;
+          fwrite(&s2,1,1,p10);
+          int s3=s&0xfd;
+              fwrite(&s3,1,1,p3);
+          int s4=s&0xfb;
+              fwrite(&s4,1,1,p4);
+          int s5=s&0xf7;
+              fwrite(&s5,1,1,p5);
+          int s6=s&0xef;
+              fwrite(&s6,1,1,p6);
+          int s7=s&0xdf;
+              fwrite(&s7,1,1,p7);
+          int s8=s&0xbf;
+              fwrite(&s8,1,1,p8);
+          int s9=s&0x7f;
+              fwrite(&s9,1,1,p9);
+       }
+        //fclose(p1);
+        fclose(p2);
+        fclose(p3);
+        fclose(p4);
+        fclose(p5);
+        fclose(p6);
+        fclose(p7);
+        fclose(p8);
+        fclose(p9);
+		fclose(p10);
+	cout<<"Layers Created\n";
+
+
+d:
+FILE *p13=fopen("Output.raw","rb");
+FILE *p14=fopen("Haltoning.raw","wb");
+char bx[row][col];
+ char ax[row][col];
+ char d1[2][2]={{0,128},{192,64}};
+
+for(int i=0;i<len;i++)
+for(int j=0;j<wid;j++)
+{
+char px=ax[i][j];
+fread(&px,1,1,p13);
+}
+
+for(int i=0;i<len;i+=2)
+for(int j=0;j<wid;j+=2)
+for(int k=i;k<i+2;k++)
+for(int t=j;t<j+2;t++)
+ if(ax[k][t]> d1[k%2][t%2])
+    bx[k][t]=255;
+   //fwrite(&0xff,1,1,p2);
+  else
+     bx[k][t]=0;
+   //fwrite(&0x00,1,1,p2);
+
+   for(int i=0;i<len;i++)
+   for(int j=0;j<wid;j++)
+   fwrite(&bx[i][j],1,1,p14);
+
+
+ fclose(p13);
+ fclose(p14);
+
+e:
+system("CLS");	
+	}
+	}
+
+int end;
+cin>>end;
+}
+
