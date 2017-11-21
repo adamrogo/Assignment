@@ -1,0 +1,119 @@
+#include <iostream>
+#include <string>
+#include <math.h>
+using namespace std;
+const int row=1000;
+const int col=1000;
+struct info
+{
+int  tag;
+int type;
+int length;
+int offset;
+}st[80];
+
+struct header
+{
+int  order;
+int  ver;
+int  length;
+int  value;
+}h;
+
+void pattern(unsigned char b[row][col],unsigned char temp[],int i, int j)
+{
+ int count=0;
+ for(int ni=i*3;ni<((i*3)+3);ni++)
+ for(int nj=j*3;nj<((j*3)+3);nj++)
+ b[ni][nj]=temp[count++];
+ }
+
+ int main()
+ {
+ unsigned char temp0[9]={0,0,0,0,0,0,0,0,0};
+ unsigned char temp1[9]={0,0,0,0,0,0,0,0,255};
+ unsigned char temp2[9]={255,0,0,0,0,0,0,0,255};
+unsigned char temp3[9]={255,0,255,0,0,0,0,0,255};
+unsigned char temp4[9]={255,0,255,0,0,0,255,0,255};
+unsigned char temp5[9]={255,0,255,0,0,0,255,255,255};
+unsigned char temp6[9]={255,0,255,255,0,0,255,255,255};
+unsigned char temp7[9]={255,255,255,255,0,0,255,255,255};
+unsigned char temp8[9]={255,255,255,255,0,255,255,255,255};
+unsigned char temp9[9]={255,255,255,255,255,255,255,255,255};
+unsigned char b[row][col];
+
+  char name[10],name1[10];
+  cout<<"enter the name of file"<<endl;
+cin>>	name;
+strcpy(name1,name);
+strcat(name,".tif");
+FILE *p=fopen(name,"rb");
+ 
+   int   a,i,j;
+fread(&a,2,1,p);
+h.order=a;
+fread(&a,2,1,p);
+h.ver=a;
+fread(&h.length,4,1,p);
+
+fseek(p,h.length,0);  
+fread(&h.value,2,1,p);
+for(int i=0;i<h.value;i++)
+{
+fread(&st[i].tag,2,1,p);
+fread(&st[i].type,2,1,p);
+fread(&st[i].length,4,1,p);
+fread(&st[i].offset,4,1,p);
+}
+int len,wid,start;
+for(int i=1;i<h.value;i++)
+{
+if(st[i].tag==256)
+wid=st[i].offset;
+if(st[i].tag==257)
+len=st[i].offset;
+if(st[i].tag==273)
+start=st[i].offset;
+}
+
+strcat(name1,".raw");
+FILE *p1=fopen(name1,"rb");
+FILE *p2=fopen("halftoning.raw","wb");
+unsigned char x;
+for(i=0;i<len;i++)
+       for(j=0;j<wid;j++)
+       {
+           fread(&x,1,1,p1);           
+             unsigned char s=x;
+         if(s>=0&&s<=25)
+           pattern(b,temp0,i,j);
+             else if(s>=26&&s<=50)
+                    pattern(b,temp1,i,j);
+                      else if(s>=51&&s<=75)
+                            pattern(b,temp2,i,j);
+                          else if(s>=76&&s<=100)
+                             pattern(b,temp3,i,j);
+                          else if(s>=101&&s<=125)
+                             pattern(b,temp4,i,j);
+                          else if(s>=126&&s<=150)
+                             pattern(b,temp5,i,j);
+                          else if(s>=151&&s<=175)
+                             pattern(b,temp6,i,j);
+                          else if(s>=176&&s<=200)
+                             pattern(b,temp7,i,j);
+                          else if(s>=201&&s<=225)
+                             pattern(b,temp8,i,j);
+                          else if(s>=226&&s<=255)
+                             pattern(b,temp9,i,j);
+        }
+	for(int i=0;i<len*3;i++)
+	for(int j=0;j<wid*3;j++)
+	 fwrite(&b[i][j],1,1,p2);
+            
+         fclose(p);
+         fclose(p1);
+         fclose(p2);
+        getchar();
+		return 0;
+		//system("pause");
+     }
