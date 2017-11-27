@@ -1,109 +1,56 @@
 #include <iostream>
-
 #include <conio.h>
-
 using namespace std;
-
 #define ROW 50
-
 #define COL 50
-
 int main()
-
 {
-
-int i, j, m, n, temp;
-
-int mat[ROW][COL];
-
-// variable dim is set to smaller value of defined
-
-// maximal number of rows and columns
-
-int dim = 50;
-
-// storing matrix size
-
-do {
-
-cout<<"Input number of rows:"<<" ";
-
-cin>>m;
-
-cout<<"Input number of columns:"<<" ";
-
-cin>>n;
-
-}while (m < 1 || m > dim || n < 1 || n > dim);
-
-// storing matrix elements
-
-cout<<"\nInput of matrix elements :\n";
-
-for (i = 0; i < m; i++) {
-
-for (j = 0; j < n; j++) {
-
-cout<<"input element of "<< i<< j<<": ";
-
-cin>>mat[i][j];
-
-}
-
-}
-
-// printing matrix before transposing
-
-cout<<"\n\nMatrix before transposing:\n";
-
-for (i = 0; i < m; i++) {
-
-for (j = 0; j < n; j++) {
-
-cout<< mat[i][j]<<"\t";
-
-}
-
-cout<<"\n";
-
-}
-
-// Tranpose Matrix
-
-for ( i=0; i<m; ++i ) {
-
-// second loop must start from i+1.
-
-for ( j=i+1; j<n; ++j ) {
-
-temp = mat[i][j];
-
-mat[i][j] = mat[j][i];
-
-mat[j][i] = temp;
-
-}
-
-}
-
-// print after transposing
-
-//i.e number of rows becomes number of columns ...
-
-cout<<"\nMatrix after transposing:\n";
-
-for (i = 0; i < n; i++) {
-
-for (j = 0; j < m; j++) {
-
-cout<< mat[i][j]<<"\t";
-
-}
-
-cout<<"\n";
-
-}
-
+   int i, j, m, n, temp;
+   int mat[ROW][COL];
+  // variable dim is set to smaller value of defined
+  // maximal number of rows and columns
+   int dim = 50;
+  // storing matrix size
+    do {
+          cout<<"Input number of rows:"<<" ";
+          cin>>m;
+          cout<<"Input number of columns:"<<" ";
+          cin>>n;
+         }
+     while (m < 1 || m > dim || n < 1 || n > dim);
+     // storing matrix elements
+    cout<<"\nInput of matrix elements :\n";
+    for (i = 0; i < m; i++) {
+       for (j = 0; j < n; j++) {
+          cout<<"input element of "<< i<< j<<": ";
+          cin>>mat[i][j];
+           }
+        }
+     // printing matrix before transposing
+    cout<<"\n\nMatrix before transposing:\n";
+    for (i = 0; i < m; i++) {
+        for (j = 0; j < n; j++) {
+            cout<< mat[i][j]<<"\t";
+      }
+      cout<<"\n";
+    }
+    // Tranpose Matrix
+    for ( i=0; i<m; ++i ) {
+    // second loop must start from i+1.
+          for ( j=i+1; j<n; ++j ) {
+              temp = mat[i][j];
+              mat[i][j] = mat[j][i];
+              mat[j][i] = temp;
+        }
+    }
+    // print after transposing
+    //i.e number of rows becomes number of columns ...
+    cout<<"\nMatrix after transposing:\n";
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < m; j++) {
+            cout<< mat[i][j]<<"\t";
+      }
+    cout<<"\n";
+   }
 return 0;
-
 }
